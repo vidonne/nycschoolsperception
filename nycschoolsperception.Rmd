@@ -1,0 +1,23 @@
+---
+title: "NYC Schools Percpetion Survey"
+author: "Cedric Vidonne"
+output: html_notebook
+---
+
+**Guided Project: NYC Schools Perceptions**
+
+Load needed packages for the analysis
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+```
+
+Load data sets into R
+
+```{r}
+combined <- read_csv("data/combined.csv")
+survey <- read_tsv("data/masterfile11_gened_final.txt")
+survey_d75 <- read_tsv("data/masterfile11_d75_final.txt")
+```
