@@ -1,5 +1,5 @@
 ---
-title: "NYC Schools Percepetion Survey"
+title: "NYC Schools Perception Survey"
 author: "Cedric Vidonne"
 output: html_notebook
 ---
