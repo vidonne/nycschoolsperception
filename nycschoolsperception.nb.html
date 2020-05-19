@@ -1809,9 +1809,91 @@ survey_d75 &lt;- read_tsv(&quot;data/masterfile11_d75_final.txt&quot;)</code></p
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+<p>Create a correlation matrix to find interesting relationships</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29yX21hdCA8LSBjb21iaW5lZF9hbGwgJT4lXG4gIHNlbGVjdChhdmdfc2F0X3Njb3JlLCBzYWZfcF8xMTphY2FfdG90XzExKSAlPiUgIyByZXN1bHRzIHZzIHBlcmNlcHRpb25cbiAgY29yKHVzZSA9IFwicGFpcndpc2UuY29tcGxldGUub2JzXCIpXG5cbmNvcl90aWIgPC0gY29yX21hdCAlPiVcbiAgYXNfdGliYmxlKHJvd25hbWVzID0gXCJ2YXJpYWJsZVwiKVxuYGBgIn0= -->
+<pre class="r"><code>cor_mat &lt;- combined_all %&gt;%
+  select(avg_sat_score, saf_p_11:aca_tot_11) %&gt;% # results vs perception
+  cor(use = &quot;pairwise.complete.obs&quot;)
+
+cor_tib &lt;- cor_mat %&gt;%
+  as_tibble(rownames = &quot;variable&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Look for strong correlation &gt;0.25 or &lt;-0.25</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3Ryb25nX2NvciA8LSBjb3JfdGliICU+JVxuICBzZWxlY3QodmFyaWFibGUsIGF2Z19zYXRfc2NvcmUpICU+JVxuICBmaWx0ZXIoYXZnX3NhdF9zY29yZSA+IDAuMjUgfCBhdmdfc2F0X3Njb3JlIDwgLTAuMjUpXG5gYGAifQ== -->
+<pre class="r"><code>strong_cor &lt;- cor_tib %&gt;%
+  select(variable, avg_sat_score) %&gt;%
+  filter(avg_sat_score &gt; 0.25 | avg_sat_score &lt; -0.25)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Create scatter plot function to plot the strong correlations</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3JlYXRlX3NjYXR0ZXIgPC0gZnVuY3Rpb24oeCwgeSkgeyAgICAgXG4gIGdncGxvdChkYXRhID0gY29tYmluZWRfYWxsKSArIFxuICAgIGFlc19zdHJpbmcoeCA9IHgsIHkgPSB5KSArXG4gICAgZ2VvbV9wb2ludChhbHBoYSA9IDAuMylcbn1cbnhfdmFyIDwtIHN0cm9uZ19jb3IkdmFyaWFibGVbMjo1XVxueV92YXIgPC0gXCJhdmdfc2F0X3Njb3JlXCJcblxubWFwMih4X3ZhciwgeV92YXIsIGNyZWF0ZV9zY2F0dGVyKVxuYGBgIn0= -->
+<pre class="r"><code>create_scatter &lt;- function(x, y) {     
+  ggplot(data = combined_all) + 
+    aes_string(x = x, y = y) +
+    geom_point(alpha = 0.3)
+}
+x_var &lt;- strong_cor$variable[2:5]
+y_var &lt;- &quot;avg_sat_score&quot;
+
+map2(x_var, y_var, create_scatter)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Reshape data for analisys purpose</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tYmluZWRfYWxsX2xvbmdlciA8LSBjb21iaW5lZF9hbGwgJT4lXG4gIHBpdm90X2xvbmdlcihjb2xzID0gYyhzYWZfcF8xMTphY2FfdG90XzExKSwgbmFtZXNfdG89XCJzdXJ2ZXlfcXVlc3Rpb25zXCIsIHZhbHVlc190bz1cInNjb3JlXCIpXG5gYGAifQ== -->
+<pre class="r"><code>combined_all_longer &lt;- combined_all %&gt;%
+  pivot_longer(cols = c(saf_p_11:aca_tot_11), names_to=&quot;survey_questions&quot;, values_to=&quot;score&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Use stringr to create new variables</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tYmluZWRfYWxsX2xvbmdlciA8LSBjb21iaW5lZF9hbGxfbG9uZ2VyICU+JVxuICBtdXRhdGUocmVzcG9uc2VfdHlwZSA9IHN0cl9zdWIoc3VydmV5X3F1ZXN0aW9ucywgNCw2KSkgJT4lXG4gIG11dGF0ZShtZXRyaWMgPSBzdHJfc3ViKHN1cnZleV9xdWVzdGlvbnMsIDEsIDMpKVxuYGBgIn0= -->
+<pre class="r"><code>combined_all_longer &lt;- combined_all_longer %&gt;%
+  mutate(response_type = str_sub(survey_questions, 4,6)) %&gt;%
+  mutate(metric = str_sub(survey_questions, 1, 3))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Rename value to more comprehensible</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tYmluZWRfYWxsX2xvbmdlciA8LSBjb21iaW5lZF9hbGxfbG9uZ2VyICU+JVxuICBtdXRhdGUocmVzcG9uc2VfdHlwZSA9IGlmZWxzZShyZXNwb25zZV90eXBlICA9PSBcIl9wX1wiLCBcInBhcmVudFwiLCBcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWZlbHNlKHJlc3BvbnNlX3R5cGUgPT0gXCJfdF9cIiwgXCJ0ZWFjaGVyXCIsXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZmVsc2UocmVzcG9uc2VfdHlwZSA9PSBcIl9zX1wiLCBcInN0dWRlbnRcIiwgXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWZlbHNlKHJlc3BvbnNlX3R5cGUgPT0gXCJfdG9cIiwgXCJ0b3RhbFwiLCBcIk5BXCIpKSkpKVxuYGBgIn0= -->
+<pre class="r"><code>combined_all_longer &lt;- combined_all_longer %&gt;%
+  mutate(response_type = ifelse(response_type  == &quot;_p_&quot;, &quot;parent&quot;, 
+                                ifelse(response_type == &quot;_t_&quot;, &quot;teacher&quot;,
+                                       ifelse(response_type == &quot;_s_&quot;, &quot;student&quot;, 
+                                              ifelse(response_type == &quot;_to&quot;, &quot;total&quot;, &quot;NA&quot;)))))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Make boxplot to see differences between parents, teachers and students.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tYmluZWRfYWxsX2xvbmdlciAlPiVcbiAgZmlsdGVyKHJlc3BvbnNlX3R5cGUgIT0gXCJ0b3RhbFwiKSAlPiVcbiAgZ2dwbG90KCkgK1xuICBhZXMoeCA9IG1ldHJpYywgeSA9IHNjb3JlLCBmaWxsID0gcmVzcG9uc2VfdHlwZSkgK1xuICBnZW9tX2JveHBsb3QoKVxuYGBgIn0= -->
+<pre class="r"><code>combined_all_longer %&gt;%
+  filter(response_type != &quot;total&quot;) %&gt;%
+  ggplot() +
+  aes(x = metric, y = score, fill = response_type) +
+  geom_boxplot()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIk5ZQyBTY2hvb2xzIFBlcmNlcHRpb24gU3VydmV5Ig0KYXV0aG9yOiAiQ2VkcmljIFZpZG9ubmUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQoqKkd1aWRlZCBQcm9qZWN0OiBOWUMgU2Nob29scyBQZXJjZXB0aW9ucyoqDQoNCkxvYWQgbmVlZGVkIHBhY2thZ2VzIGZvciB0aGUgYW5hbHlzaXMNCg0KYGBge3J9DQpsaWJyYXJ5KHJlYWRyKQ0KbGlicmFyeShkcGx5cikNCmxpYnJhcnkodGlkeXIpDQpgYGANCg0KTG9hZCBkYXRhIHNldHMgaW50byBSDQoNCmBgYHtyfQ0KY29tYmluZWQgPC0gcmVhZF9jc3YoImRhdGEvY29tYmluZWQuY3N2IikNCnN1cnZleSA8LSByZWFkX3RzdigiZGF0YS9tYXN0ZXJmaWxlMTFfZ2VuZWRfZmluYWwudHh0IikNCnN1cnZleV9kNzUgPC0gcmVhZF90c3YoImRhdGEvbWFzdGVyZmlsZTExX2Q3NV9maW5hbC50eHQiKQ0KYGBgDQoNClNlbGVjdCBuZWVkZWQgZGF0YSBmb3IgYW5hbHlzaXMgZnJvbSBTdXJ2ZXkuIEZpbHRlciAiSGlnaCBTY2hvb2wiIGFuZCBzZWxlY3Qgb25seSBhZ2dyZWdhdGVkIGRhdGENCg0KYGBge3J9DQpzdXJ2ZXlfc2VsZWN0IDwtIHN1cnZleSAlPiUNCiAgZmlsdGVyKHNjaG9vbHR5cGUgPT0gIkhpZ2ggU2Nob29sIikgJT4lDQogIHNlbGVjdChkYm46YWNhX3RvdF8xMSkNCmBgYA0KDQpTZWxlY3QgbmVlZGVkIGRhdGEgZm9yIGFuYWx5c2lzIGZyb20gU3VydmV5IEQ3NS4gU2VsZWN0IG9ubHkgYWdncmVnYXRlZCBkYXRhDQoNCmBgYHtyfQ0Kc3VydmV5X2Q3NV9zZWxlY3QgPC0gc3VydmV5X2Q3NSAlPiUNCiAgc2VsZWN0KGRibjphY2FfdG90XzExKQ0KYGBgDQoNClJlbmFtZSBkYm4gdG8gREJOIHRvIG1hdGNoIHdpdGggY29tYmluZWQgZGYNCg0KYGBge3J9DQpzdXJ2ZXlfY29tYmluZWQgPC0gc3VydmV5X2NvbWJpbmVkICU+JQ0KICByZW5hbWUoREJOID0gZGJuKQ0KYGBgDQoNCkpvaW4gY29tYmluZWQgYW5kIGNvbWJpbmVkX3N1cnZleXMNCg0KYGBge3J9DQpjb21iaW5lZF9hbGwgPC0gY29tYmluZWQgJT4lDQogIGxlZnRfam9pbihzdXJ2ZXlfY29tYmluZWQsIGJ5ID0gIkRCTiIpDQpgYGANCg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIk5ZQyBTY2hvb2xzIFBlcmNlcHRpb24gU3VydmV5Ig0KYXV0aG9yOiAiQ2VkcmljIFZpZG9ubmUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQoqKkd1aWRlZCBQcm9qZWN0OiBOWUMgU2Nob29scyBQZXJjZXB0aW9ucyoqDQoNCkxvYWQgbmVlZGVkIHBhY2thZ2VzIGZvciB0aGUgYW5hbHlzaXMNCg0KYGBge3J9DQpsaWJyYXJ5KHJlYWRyKQ0KbGlicmFyeShkcGx5cikNCmxpYnJhcnkodGlkeXIpDQpsaWJyYXJ5KGdncGxvdDIpDQpsaWJyYXJ5KHB1cnJyKQ0KbGlicmFyeShzdHJpbmdyKQ0KYGBgDQoNCkxvYWQgZGF0YSBzZXRzIGludG8gUg0KDQpgYGB7cn0NCmNvbWJpbmVkIDwtIHJlYWRfY3N2KCJkYXRhL2NvbWJpbmVkLmNzdiIpDQpzdXJ2ZXkgPC0gcmVhZF90c3YoImRhdGEvbWFzdGVyZmlsZTExX2dlbmVkX2ZpbmFsLnR4dCIpDQpzdXJ2ZXlfZDc1IDwtIHJlYWRfdHN2KCJkYXRhL21hc3RlcmZpbGUxMV9kNzVfZmluYWwudHh0IikNCmBgYA0KDQpTZWxlY3QgbmVlZGVkIGRhdGEgZm9yIGFuYWx5c2lzIGZyb20gU3VydmV5LiBGaWx0ZXIgIkhpZ2ggU2Nob29sIiBhbmQgc2VsZWN0IG9ubHkgYWdncmVnYXRlZCBkYXRhDQoNCmBgYHtyfQ0Kc3VydmV5X3NlbGVjdCA8LSBzdXJ2ZXkgJT4lDQogIGZpbHRlcihzY2hvb2x0eXBlID09ICJIaWdoIFNjaG9vbCIpICU+JQ0KICBzZWxlY3QoZGJuOmFjYV90b3RfMTEpDQpgYGANCg0KU2VsZWN0IG5lZWRlZCBkYXRhIGZvciBhbmFseXNpcyBmcm9tIFN1cnZleSBENzUuIFNlbGVjdCBvbmx5IGFnZ3JlZ2F0ZWQgZGF0YQ0KDQpgYGB7cn0NCnN1cnZleV9kNzVfc2VsZWN0IDwtIHN1cnZleV9kNzUgJT4lDQogIHNlbGVjdChkYm46YWNhX3RvdF8xMSkNCmBgYA0KDQpSZW5hbWUgZGJuIHRvIERCTiB0byBtYXRjaCB3aXRoIGNvbWJpbmVkIGRmDQoNCmBgYHtyfQ0Kc3VydmV5X2NvbWJpbmVkIDwtIHN1cnZleV9jb21iaW5lZCAlPiUNCiAgcmVuYW1lKERCTiA9IGRibikNCmBgYA0KDQpKb2luIGNvbWJpbmVkIGFuZCBjb21iaW5lZF9zdXJ2ZXlzDQoNCmBgYHtyfQ0KY29tYmluZWRfYWxsIDwtIGNvbWJpbmVkICU+JQ0KICBsZWZ0X2pvaW4oc3VydmV5X2NvbWJpbmVkLCBieSA9ICJEQk4iKQ0KYGBgDQoNCkNyZWF0ZSBhIGNvcnJlbGF0aW9uIG1hdHJpeCB0byBmaW5kIGludGVyZXN0aW5nIHJlbGF0aW9uc2hpcHMNCg0KYGBge3J9DQpjb3JfbWF0IDwtIGNvbWJpbmVkX2FsbCAlPiUNCiAgc2VsZWN0KGF2Z19zYXRfc2NvcmUsIHNhZl9wXzExOmFjYV90b3RfMTEpICU+JSAjIHJlc3VsdHMgdnMgcGVyY2VwdGlvbg0KICBjb3IodXNlID0gInBhaXJ3aXNlLmNvbXBsZXRlLm9icyIpDQoNCmNvcl90aWIgPC0gY29yX21hdCAlPiUNCiAgYXNfdGliYmxlKHJvd25hbWVzID0gInZhcmlhYmxlIikNCmBgYA0KDQpMb29rIGZvciBzdHJvbmcgY29ycmVsYXRpb24gPjAuMjUgb3IgPC0wLjI1DQpgYGB7cn0NCnN0cm9uZ19jb3IgPC0gY29yX3RpYiAlPiUNCiAgc2VsZWN0KHZhcmlhYmxlLCBhdmdfc2F0X3Njb3JlKSAlPiUNCiAgZmlsdGVyKGF2Z19zYXRfc2NvcmUgPiAwLjI1IHwgYXZnX3NhdF9zY29yZSA8IC0wLjI1KQ0KYGBgDQoNCkNyZWF0ZSBzY2F0dGVyIHBsb3QgZnVuY3Rpb24gdG8gcGxvdCB0aGUgc3Ryb25nIGNvcnJlbGF0aW9ucw0KYGBge3J9DQpjcmVhdGVfc2NhdHRlciA8LSBmdW5jdGlvbih4LCB5KSB7ICAgICANCiAgZ2dwbG90KGRhdGEgPSBjb21iaW5lZF9hbGwpICsgDQogICAgYWVzX3N0cmluZyh4ID0geCwgeSA9IHkpICsNCiAgICBnZW9tX3BvaW50KGFscGhhID0gMC4zKQ0KfQ0KeF92YXIgPC0gc3Ryb25nX2NvciR2YXJpYWJsZVsyOjVdDQp5X3ZhciA8LSAiYXZnX3NhdF9zY29yZSINCg0KbWFwMih4X3ZhciwgeV92YXIsIGNyZWF0ZV9zY2F0dGVyKQ0KYGBgDQoNClJlc2hhcGUgZGF0YSBmb3IgYW5hbGlzeXMgcHVycG9zZQ0KYGBge3J9DQpjb21iaW5lZF9hbGxfbG9uZ2VyIDwtIGNvbWJpbmVkX2FsbCAlPiUNCiAgcGl2b3RfbG9uZ2VyKGNvbHMgPSBjKHNhZl9wXzExOmFjYV90b3RfMTEpLCBuYW1lc190bz0ic3VydmV5X3F1ZXN0aW9ucyIsIHZhbHVlc190bz0ic2NvcmUiKQ0KYGBgDQogICAgICAgICAgICAgICANClVzZSBzdHJpbmdyIHRvIGNyZWF0ZSBuZXcgdmFyaWFibGVzDQpgYGB7cn0NCmNvbWJpbmVkX2FsbF9sb25nZXIgPC0gY29tYmluZWRfYWxsX2xvbmdlciAlPiUNCiAgbXV0YXRlKHJlc3BvbnNlX3R5cGUgPSBzdHJfc3ViKHN1cnZleV9xdWVzdGlvbnMsIDQsNikpICU+JQ0KICBtdXRhdGUobWV0cmljID0gc3RyX3N1YihzdXJ2ZXlfcXVlc3Rpb25zLCAxLCAzKSkNCmBgYA0KDQpSZW5hbWUgdmFsdWUgdG8gbW9yZSBjb21wcmVoZW5zaWJsZQ0KYGBge3J9DQpjb21iaW5lZF9hbGxfbG9uZ2VyIDwtIGNvbWJpbmVkX2FsbF9sb25nZXIgJT4lDQogIG11dGF0ZShyZXNwb25zZV90eXBlID0gaWZlbHNlKHJlc3BvbnNlX3R5cGUgID09ICJfcF8iLCAicGFyZW50IiwgDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmZWxzZShyZXNwb25zZV90eXBlID09ICJfdF8iLCAidGVhY2hlciIsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZmVsc2UocmVzcG9uc2VfdHlwZSA9PSAiX3NfIiwgInN0dWRlbnQiLCANCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZmVsc2UocmVzcG9uc2VfdHlwZSA9PSAiX3RvIiwgInRvdGFsIiwgIk5BIikpKSkpDQpgYGANCg0KTWFrZSBib3hwbG90IHRvIHNlZSBkaWZmZXJlbmNlcyBiZXR3ZWVuIHBhcmVudHMsIHRlYWNoZXJzIGFuZCBzdHVkZW50cy4NCmBgYHtyfQ0KY29tYmluZWRfYWxsX2xvbmdlciAlPiUNCiAgZmlsdGVyKHJlc3BvbnNlX3R5cGUgIT0gInRvdGFsIikgJT4lDQogIGdncGxvdCgpICsNCiAgYWVzKHggPSBtZXRyaWMsIHkgPSBzY29yZSwgZmlsbCA9IHJlc3BvbnNlX3R5cGUpICsNCiAgZ2VvbV9ib3hwbG90KCkNCmBgYA0KDQoNCg0K</div>
 
 
 
